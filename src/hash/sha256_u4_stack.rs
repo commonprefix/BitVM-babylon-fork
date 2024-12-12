@@ -2,13 +2,9 @@ use crate::u4::{
     u4_add::{u4_add_carry_nested, u4_add_nested},
     u4_add_stack::*,
     u4_logic_stack::*,
-    u4_rot_stack::*,
     u4_shift_stack::*,
-    u4_std::*,
 };
 use bitcoin_script_stack::stack::{script, Script, StackTracker, StackVariable};
-use bitcoin_scriptexec::Stack;
-use core::num;
 use std::{collections::HashMap, vec};
 
 const K: [u32; 64] = [
@@ -264,12 +260,7 @@ pub fn u4_add_nibble_stack(
     if modulo_table.is_null() || quotient_table.is_null() {
         if !is_last {
             let output_vars = vec![(1, "add_no_table".into()), (1, "carry_no_table".into())];
-            let out = stack.custom_ex(
-                u4_add_carry_nested(0, number_count),
-                1,
-                output_vars,
-                0,
-            );
+            let out = stack.custom_ex(u4_add_carry_nested(0, number_count), 1, output_vars, 0);
             *carry = out[1];
             out[0]
         } else {
@@ -327,7 +318,7 @@ pub fn sha256_stack(
         .map(|i| stack.define(1, &format!("message[{}]", i)))
         .collect::<Vec<StackVariable>>();
 
-    let (mut modulo, mut quotient) = match use_add_table {
+    let (modulo, quotient) = match use_add_table {
         true => (
             u4_push_modulo_table_stack(stack),
             u4_push_quotient_table_stack(stack),
@@ -389,11 +380,8 @@ pub fn sha256_stack(
 
             let mut sched = [StackVariable::null(); 8];
             for nib in 0..8 {
-                sched[nib as usize] = moved_message[nib];
-                stack.rename(
-                    sched[nib as usize],
-                    format!("schedule[{}][{}]", i, nib).as_str(),
-                );
+                sched[nib] = moved_message[nib];
+                stack.rename(sched[nib], format!("schedule[{}][{}]", i, nib).as_str());
             }
 
             schedule.push(sched);
@@ -740,7 +728,7 @@ mod tests {
     use bitcoin_script_stack::stack::{script, Script, StackTracker};
 
     use super::*;
-    use crate::execute_script;
+    use crate::{execute_script, u4::u4_std::u4_drop};
     use sha2::{Digest, Sha256};
 
     #[test]

@@ -20,7 +20,7 @@ pub fn generate_keys_from_secret(
     let secp = Secp256k1::new();
     let keypair = Keypair::from_seckey_str(&secp, secret).unwrap();
     let private_key = PrivateKey::new(keypair.secret_key(), network);
-    let public_key = PublicKey::from_private_key(&secp, &private_key);
+    let public_key = PublicKey::from_private_key(&secp, private_key);
 
     (secp, keypair, public_key)
 }

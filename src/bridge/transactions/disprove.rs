@@ -25,6 +25,7 @@ pub struct DisproveTransaction {
     #[serde(with = "consensus::serde::With::<consensus::serde::Hex>")]
     prev_outs: Vec<TxOut>,
     prev_scripts: Vec<ScriptBuf>,
+    #[serde(with = "bitcoin::amount::serde::as_sat")]
     reward_output_amount: Amount,
 
     musig2_nonces: HashMap<usize, HashMap<PublicKey, PubNonce>>,

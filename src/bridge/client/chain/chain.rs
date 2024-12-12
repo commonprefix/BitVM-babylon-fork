@@ -13,6 +13,7 @@ pub struct PegOutEvent {
     pub withdrawer_chain_address: String,
     pub withdrawer_public_key_hash: PubkeyHash,
     pub source_outpoint: OutPoint,
+    #[serde(with = "bitcoin::amount::serde::as_sat")]
     pub amount: Amount,
     pub operator_public_key: PublicKey,
     pub timestamp: u32,
@@ -23,6 +24,7 @@ pub struct PegOutEvent {
 pub struct PegOutBurntEvent {
     pub withdrawer_chain_address: String,
     pub source_outpoint: OutPoint,
+    #[serde(with = "bitcoin::amount::serde::as_sat")]
     pub amount: Amount,
     pub operator_public_key: PublicKey,
     pub timestamp: u32,
@@ -31,6 +33,7 @@ pub struct PegOutBurntEvent {
 #[derive(Serialize, Deserialize, Eq, PartialEq, Clone, Debug)]
 pub struct PegInEvent {
     pub depositor: String,
+    #[serde(with = "bitcoin::amount::serde::as_sat")]
     pub amount: Amount,
     pub depositor_pubkey: PublicKey,
 }
@@ -42,6 +45,12 @@ pub struct Chain {
     default: Option<Box<dyn ChainAdaptor>>,
 }
 
+impl Default for Chain {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Chain {
     pub fn new() -> Self {
         Self {
@@ -50,7 +59,9 @@ impl Chain {
         }
     }
 
-    pub fn init_default(&mut self, adaptor: Box<dyn ChainAdaptor>) { self.default = Some(adaptor); }
+    pub fn init_default(&mut self, adaptor: Box<dyn ChainAdaptor>) {
+        self.default = Some(adaptor);
+    }
 
     pub fn init_ethereum(&mut self, conf: EthereumInitConfig) {
         self.ethereum = Some(EthereumAdaptor::from_config(conf));
@@ -75,7 +86,7 @@ impl Chain {
 
     fn get_driver(&self) -> Result<&dyn ChainAdaptor, &str> {
         if self.default.is_some() {
-            return Ok((*self.default.as_ref().unwrap()).borrow());
+            Ok((*self.default.as_ref().unwrap()).borrow())
         } else if self.ethereum.is_some() {
             return Ok(self.ethereum.as_ref().unwrap());
         } else {

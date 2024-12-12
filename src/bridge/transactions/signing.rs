@@ -2,7 +2,8 @@ use bitcoin::{
     key::Keypair,
     secp256k1::Message,
     sighash::{Prevouts, SighashCache},
-    taproot::{LeafVersion, TaprootSpendInfo},
+    taproot::{LeafVersion, TapLeafHashExt, TaprootSpendInfo},
+    witness::WitnessExt,
     Amount, EcdsaSighashType, PublicKey, Script, ScriptBuf, TapLeafHash, TapSighashType,
     Transaction, TxOut,
 };
@@ -55,7 +56,7 @@ pub fn push_p2wsh_signature_to_witness(
 
     tx.input[input_index]
         .witness
-        .push_ecdsa_signature(&signature);
+        .push_ecdsa_signature(signature.clone());
 }
 
 pub fn push_p2wsh_script_to_witness(tx: &mut Transaction, input_index: usize, script: &Script) {
@@ -94,7 +95,7 @@ pub fn populate_p2wsh_witness_with_signatures(
     for signature in signatures {
         tx.input[input_index]
             .witness
-            .push_ecdsa_signature(signature);
+            .push_ecdsa_signature(signature.clone());
     }
     push_p2wsh_script_to_witness(tx, input_index, script);
 }
@@ -113,7 +114,7 @@ pub fn generate_p2wpkh_schnorr_signature(
     let sighash = sighash_cache
         .p2wpkh_signature_hash(
             input_index,
-            &generate_p2wpkh_address(context.network(), &public_key).script_pubkey(),
+            &generate_p2wpkh_address(context.network(), public_key).script_pubkey(),
             value,
             sighash_type,
         )
@@ -150,7 +151,7 @@ pub fn push_p2wpkh_signature_to_witness(
 
     tx.input[input_index]
         .witness
-        .push_ecdsa_signature(&signature);
+        .push_ecdsa_signature(signature);
 }
 
 pub fn push_p2wpkh_public_key_to_witness(
@@ -210,16 +211,15 @@ pub fn generate_taproot_leaf_schnorr_signature(
         sighash = SighashCache::new(tx)
             .taproot_script_spend_signature_hash(
                 input_index,
-                &Prevouts::All(&prev_outs),
+                &Prevouts::All(prev_outs),
                 leaf_hash,
                 sighash_type,
             )
             .expect("Failed to construct sighash");
     }
 
-    let signature = context
-        .secp()
-        .sign_schnorr_no_aux_rand(&Message::from(sighash), keypair);
+    let msg = Message::from(sighash);
+    let signature = context.secp().sign_schnorr_no_aux_rand(&msg[..], keypair);
 
     bitcoin::taproot::Signature {
         signature,
@@ -301,7 +301,7 @@ pub fn populate_taproot_input_witness_default(
             input_index,
             sighash_type,
             script,
-            &keypair,
+            keypair,
         );
         unlock_data.push(schnorr_signature.to_vec());
     }

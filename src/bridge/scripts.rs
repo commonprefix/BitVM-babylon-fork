@@ -23,7 +23,7 @@ pub fn generate_burn_script() -> ScriptBuf {
 }
 
 pub fn generate_burn_script_address(network: Network) -> Address {
-    Address::p2wsh(&generate_burn_script(), network)
+    Address::p2wsh(&generate_burn_script(), network).expect("Failed to create p2wsh address")
 }
 
 pub fn generate_burn_taproot_script() -> ScriptBuf {
@@ -66,20 +66,21 @@ pub fn generate_pay_to_pubkey_hash_with_inscription_script(
 
 pub fn generate_p2pkh_address(network: Network, public_key: &PublicKey) -> Address {
     Address::p2pkh(
-        &CompressedPublicKey::try_from(*public_key).expect("Could not compress public key"),
+        CompressedPublicKey::try_from(*public_key).expect("Could not compress public key"),
         network,
     )
 }
 
 pub fn generate_p2wpkh_address(network: Network, public_key: &PublicKey) -> Address {
     Address::p2wpkh(
-        &CompressedPublicKey::try_from(*public_key).expect("Could not compress public key"),
+        CompressedPublicKey::try_from(*public_key).expect("Could not compress public key"),
         network,
     )
 }
 
 pub fn generate_pay_to_pubkey_script_address(network: Network, public_key: &PublicKey) -> Address {
     Address::p2wsh(&generate_pay_to_pubkey_script(public_key), network)
+        .expect("Failed to create p2wsh address")
 }
 
 pub fn generate_pay_to_pubkey_hash_with_inscription_script_address(
@@ -96,6 +97,7 @@ pub fn generate_pay_to_pubkey_hash_with_inscription_script_address(
         ),
         network,
     )
+    .expect("Failed to create p2wsh address")
 }
 
 pub fn generate_pay_to_pubkey_taproot_script(public_key: &XOnlyPublicKey) -> ScriptBuf {
@@ -111,6 +113,7 @@ pub fn generate_pay_to_pubkey_taproot_script_address(
     public_key: &XOnlyPublicKey,
 ) -> Address {
     Address::p2wsh(&generate_pay_to_pubkey_taproot_script(public_key), network)
+        .expect("Failed to create p2wsh address")
 }
 
 pub fn generate_timelock_script(public_key: &PublicKey, num_blocks_timelock: u32) -> ScriptBuf {
@@ -133,6 +136,7 @@ pub fn generate_timelock_script_address(
         &generate_timelock_script(public_key, num_blocks_timelock),
         network,
     )
+    .expect("Failed to create p2wsh address")
 }
 
 pub fn generate_timelock_taproot_script(
@@ -158,4 +162,5 @@ pub fn generate_timelock_taproot_script_address(
         &generate_timelock_taproot_script(public_key, num_blocks_timelock),
         network,
     )
+    .expect("Failed to create p2wsh address")
 }

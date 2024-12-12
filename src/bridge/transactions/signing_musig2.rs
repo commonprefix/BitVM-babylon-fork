@@ -1,6 +1,6 @@
 use bitcoin::{
     sighash::{Prevouts, SighashCache},
-    taproot::LeafVersion,
+    taproot::{LeafVersion, TapLeafHashExt},
     Script, TapLeafHash, TapSighashType, Transaction, TxOut,
 };
 use musig2::{
@@ -12,9 +12,13 @@ use musig2::{
 
 use super::super::contexts::{base::BaseContext, verifier::VerifierContext};
 
-pub fn generate_nonce() -> SecNonce { SecNonce::build(&mut rand::rngs::OsRng).build() }
+pub fn generate_nonce() -> SecNonce {
+    SecNonce::build(&mut rand::rngs::OsRng).build()
+}
 
-pub fn generate_aggregated_nonce(nonces: &Vec<PubNonce>) -> AggNonce { AggNonce::sum(nonces) }
+pub fn generate_aggregated_nonce(nonces: &Vec<PubNonce>) -> AggNonce {
+    AggNonce::sum(nonces)
+}
 
 pub fn generate_taproot_partial_signature(
     context: &VerifierContext,
@@ -38,7 +42,7 @@ pub fn generate_taproot_partial_signature(
     let sighash = SighashCache::new(tx)
         .taproot_script_spend_signature_hash(
             input_index,
-            &Prevouts::All(&prevouts), // TODO: add Prevouts::One
+            &Prevouts::All(prevouts), // TODO: add Prevouts::One
             leaf_hash,
             sighash_type,
         )
@@ -48,7 +52,7 @@ pub fn generate_taproot_partial_signature(
         &key_agg_ctx,
         context.verifier_keypair.secret_key(),
         secret_nonce.clone(),
-        &aggregated_nonce,
+        aggregated_nonce,
         sighash,
     )
 }
@@ -75,7 +79,7 @@ pub fn generate_taproot_aggregated_signature(
     let sighash_cache = SighashCache::new(tx)
         .taproot_script_spend_signature_hash(
             input_index,
-            &Prevouts::All(&prevouts), // TODO: add Prevouts::One
+            &Prevouts::All(prevouts), // TODO: add Prevouts::One
             leaf_hash,
             sighash_type,
         )

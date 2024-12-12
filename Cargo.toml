@@ -5,14 +5,15 @@ edition = "2021"
 exclude = ["tests"]
 
 [dependencies]
-#bitcoin-script = { path = "../rust-bitcoin-script"}
-#bitcoin-scriptexec = { path = "../rust-bitcoin-scriptexec"}
-bitcoin-script = { git = "https://github.com/BitVM/rust-bitcoin-script", branch= "StructuredScript" }
-bitcoin = { git = "https://github.com/rust-bitcoin/rust-bitcoin", branch = "bitvm", features = ["rand-std"]}
+bitcoin = { git = "https://github.com/commonprefix/rust-bitcoin-storopoli", branch = "bitvm", features = ["rand-std", "serde"]}
+bitcoin-script = { git = "https://github.com/commonprefix/rust-bitcoin-script", branch= "StructuredScript" }
+bitcoin-script-stack = { git = "https://github.com/commonprefix/rust-bitcoin-script-stack", branch = "bitvm" }
+esplora-client = { git = "https://github.com/commonprefix/rust-esplora-client" }
+
 strum = "0.26"
 strum_macros = "0.26"
 hex = "0.4.3"
-bitcoin-scriptexec = { git = "https://github.com/BitVM/rust-bitcoin-scriptexec/"}
+bitcoin-scriptexec = { git = "https://github.com/commonprefix/rust-bitcoin-scriptexec/"}
 serde = { version = "1.0.197", features = ["derive"] }
 num-bigint = "0.4.4"
 num-traits = "0.2.18"
@@ -22,10 +23,8 @@ ark-ec = { git = "https://github.com/chainwayxyz/algebra/", branch = "new-ate-lo
 ark-groth16 = { git = "https://github.com/arkworks-rs/groth16" }
 sha2 = "0.10.8"
 tokio = { version = "1.37.0", features = ["full"] }
-esplora-client = { git = "https://github.com/BitVM/rust-esplora-client" }
 serde_json = "1.0.116"
 lazy_static = "1.4.0"
-bitcoin-script-stack = { git = "https://github.com/BitVM/rust-bitcoin-script-stack", branch = "bitvm" }
 rand = "0.8.5"
 rand_chacha = "0.3.1"
 once_cell = "1.19.0"
@@ -34,7 +33,7 @@ aws-sdk-s3 = "1.40.0"
 regex = "1.10.5"
 blake3 = "=1.5.1"
 paste = "1.0.15"
-musig2 = { version = "0.0.11", features = ["serde", "rand"] }
+musig2 = { version = "0.2.1", features = ["serde", "rand"] }
 futures = "0.3.30"
 async-trait = "0.1.81"
 suppaftp = { version = "6.0.1", features = ["async", "async-native-tls"] }
@@ -60,12 +59,13 @@ opt-level = 3
 lto = true
 
 [patch.crates-io]
-base58check = { git = "https://github.com/rust-bitcoin/rust-bitcoin", branch = "bitvm"}
-bitcoin = { git = "https://github.com/rust-bitcoin/rust-bitcoin", branch = "bitvm"}
-bitcoin_hashes = { git = "https://github.com/rust-bitcoin/rust-bitcoin", branch = "bitvm"}
-bitcoin-internals = { git = "https://github.com/rust-bitcoin/rust-bitcoin", branch = "bitvm"}
-bitcoin-io = { git = "https://github.com/rust-bitcoin/rust-bitcoin", branch = "bitvm"}
-bitcoin-units = { git = "https://github.com/rust-bitcoin/rust-bitcoin", branch = "bitvm"}
+base58ck = { git = "https://github.com/commonprefix/rust-bitcoin-storopoli", branch = "bitvm"}
+bitcoin = { git = "https://github.com/commonprefix/rust-bitcoin-storopoli", branch = "bitvm", features = ["rand-std", "serde"]}
+bitcoin_hashes = { git = "https://github.com/commonprefix/rust-bitcoin-storopoli", branch = "bitvm"}
+bitcoin-internals = { git = "https://github.com/commonprefix/rust-bitcoin-storopoli", branch = "bitvm"}
+bitcoin-io = { git = "https://github.com/commonprefix/rust-bitcoin-storopoli", branch = "bitvm"}
+bitcoin-units = { git = "https://github.com/commonprefix/rust-bitcoin-storopoli", branch = "bitvm"}
+bitcoin-primitives = { git = "https://github.com/commonprefix/rust-bitcoin-storopoli", branch = "bitvm" , features = ["alloc"]}
 
 ark-ff = { git = "https://github.com/chainwayxyz/algebra/", branch = "new-ate-loop" }
 ark-ec = { git = "https://github.com/chainwayxyz/algebra/", branch = "new-ate-loop" }
@@ -79,6 +79,7 @@ ark-crypto-primitives = { git = "https://github.com/arkworks-rs/crypto-primitive
 ark-relations = { git = "https://github.com/arkworks-rs/snark/" }
 ark-snark = { git = "https://github.com/arkworks-rs/snark/" }
 ark-groth16 = { git = "https://github.com/arkworks-rs/groth16" }
+
 
 [[bin]]
 name = "cli"

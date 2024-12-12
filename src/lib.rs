@@ -3,6 +3,7 @@
 pub mod treepp {
     pub use crate::execute_script;
     pub use crate::run;
+    pub use bitcoin::taproot::TapLeafHashExt;
     pub use bitcoin_script::{script, Script};
 }
 
@@ -11,7 +12,9 @@ use core::fmt;
 use bitcoin::{
     hashes::Hash,
     hex::DisplayHex,
-    taproot::{LeafVersion, TAPROOT_ANNEX_PREFIX},
+    script::ScriptExt,
+    taproot::{LeafVersion, TapLeafHashExt, TAPROOT_ANNEX_PREFIX},
+    witness::WitnessExt,
     Opcode, Script, ScriptBuf, TapLeafHash, Transaction, TxOut,
 };
 use bitcoin_scriptexec::{Exec, ExecCtx, ExecError, ExecStats, Options, Stack, TxTemplate};
@@ -53,9 +56,13 @@ impl fmt::Display for FmtStack {
 }
 
 impl FmtStack {
-    pub fn len(&self) -> usize { self.0.len() }
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
 
-    pub fn get(&self, index: usize) -> Vec<u8> { self.0.get(index) }
+    pub fn get(&self, index: usize) -> Vec<u8> {
+        self.0.get(index)
+    }
 }
 
 impl fmt::Debug for FmtStack {
@@ -123,7 +130,7 @@ pub fn execute_script(script: treepp::Script) -> ExecuteInfo {
             },
             prevouts: vec![],
             input_idx: 0,
-            taproot_annex_scriptleaf: Some((TapLeafHash::all_zeros(), None)),
+            taproot_annex_scriptleaf: Some((TapLeafHash::from_byte_array([0; 32]), None)),
         },
         script.compile(),
         vec![],
@@ -205,7 +212,7 @@ pub fn dry_run_taproot_input(
         stats: exec.stats().clone(),
     };
 
-    return info;
+    info
 }
 
 /// Dry-runs all taproot input scripts. Return Ok(()) if all scripts execute successfully,
@@ -267,7 +274,7 @@ pub fn execute_script_without_stack_limit(script: treepp::Script) -> ExecuteInfo
             },
             prevouts: vec![],
             input_idx: 0,
-            taproot_annex_scriptleaf: Some((TapLeafHash::all_zeros(), None)),
+            taproot_annex_scriptleaf: Some((TapLeafHash::from_byte_array([0; 32]), None)),
         },
         script.compile(),
         vec![],
@@ -308,7 +315,7 @@ pub fn execute_raw_script_with_inputs(script: Vec<u8>, witness: Vec<Vec<u8>>) ->
             },
             prevouts: vec![],
             input_idx: 0,
-            taproot_annex_scriptleaf: Some((TapLeafHash::all_zeros(), None)),
+            taproot_annex_scriptleaf: Some((TapLeafHash::from_byte_array([0; 32]), None)),
         },
         ScriptBuf::from_bytes(script),
         witness,
@@ -320,7 +327,7 @@ pub fn execute_raw_script_with_inputs(script: Vec<u8>, witness: Vec<Vec<u8>>) ->
         match temp_res {
             Ok(()) => (),
             Err(err) => {
-                if err.success == false {
+                if !err.success {
                     // println!("temp_res: {:?}", temp_res);
                 }
                 break;

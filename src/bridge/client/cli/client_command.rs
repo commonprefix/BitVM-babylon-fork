@@ -4,15 +4,15 @@ use crate::bridge::constants::DestinationNetwork;
 use crate::bridge::contexts::base::generate_keys_from_secret;
 use crate::bridge::graphs::base::{VERIFIER_0_SECRET, VERIFIER_1_SECRET};
 use crate::bridge::transactions::base::Input;
-use bitcoin::PublicKey;
+use bitcoin::{PublicKey, TestnetVersion};
 use bitcoin::{Network, OutPoint};
 use clap::{arg, ArgMatches, Command};
 use colored::Colorize;
-use tokio::time::sleep;
 use std::io::{self, Write};
 use std::str::FromStr;
 use std::time::Duration;
 use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::time::sleep;
 
 pub struct CommonArgs {
     pub key_dir: Option<String>,
@@ -20,19 +20,18 @@ pub struct CommonArgs {
     pub environment: Option<String>,
 }
 
-
 pub struct ClientCommand {
     client: BitVMClient,
 }
 
 impl ClientCommand {
-    pub async fn new(
-        common_args: CommonArgs,
-    ) -> Self {
-        let (source_network, destination_network) = match common_args.environment.as_deref()
-        {
+    pub async fn new(common_args: CommonArgs) -> Self {
+        let (source_network, destination_network) = match common_args.environment.as_deref() {
             Some("mainnet") => (Network::Bitcoin, DestinationNetwork::Ethereum),
-            Some("testnet") => (Network::Testnet, DestinationNetwork::EthereumSepolia),
+            Some("testnet") => (
+                Network::Testnet(TestnetVersion::V4),
+                DestinationNetwork::EthereumSepolia,
+            ),
             _ => {
                 eprintln!("Invalid environment. Use mainnet, testnet.");
                 std::process::exit(1);
@@ -121,7 +120,7 @@ impl ClientCommand {
             outpoint,
             amount: tx.output[outpoint.vout as usize].value,
         };
-        let peg_in_id = self.client.create_peg_in_graph(input, &evm_address).await;
+        let peg_in_id = self.client.create_peg_in_graph(input, evm_address).await;
 
         self.client.flush().await;
 
@@ -170,7 +169,7 @@ impl ClientCommand {
                     .subcommand(Command::new("deposit").about("Broadcast peg-in deposit"))
                     .subcommand(Command::new("refund").about("Broadcast peg-in refund"))
                     .subcommand(Command::new("confirm").about("Broadcast peg-in confirm"))
-                    .subcommand_required(true)
+                    .subcommand_required(true),
             )
             .subcommand(
                 Command::new("tx")
@@ -183,7 +182,7 @@ impl ClientCommand {
                     .subcommand(Command::new("assert").about("Broadcast assert"))
                     .subcommand(Command::new("take_1").about("Broadcast take 1"))
                     .subcommand(Command::new("take_2").about("Broadcast take 2"))
-                    .subcommand_required(true)
+                    .subcommand_required(true),
             )
             .subcommand_required(true)
     }
@@ -217,9 +216,9 @@ impl ClientCommand {
 
     pub fn get_status_command() -> Command {
         Command::new("status")
-        .short_flag('s')
-        .about("Show the status of the BitVM client")
-        .after_help("Get the status of the BitVM client.")
+            .short_flag('s')
+            .about("Show the status of the BitVM client")
+            .after_help("Get the status of the BitVM client.")
     }
 
     pub async fn handle_status_command(&mut self) -> io::Result<()> {
@@ -273,7 +272,10 @@ impl ClientCommand {
                 let key_dir = matches.get_one::<String>("key-dir").cloned();
                 let keys_command = KeysCommand::new(key_dir);
                 keys_command.handle_command(sub_matches)?;
-            } else if matches.subcommand_matches("get-depositor-address").is_some() {
+            } else if matches
+                .subcommand_matches("get-depositor-address")
+                .is_some()
+            {
                 self.handle_get_depositor_address().await?;
             } else if matches.subcommand_matches("get-depositor-utxos").is_some() {
                 self.handle_get_depositor_utxos().await?;
@@ -283,7 +285,7 @@ impl ClientCommand {
                 self.handle_status_command().await?;
             } else if let Some(sub_matches) = matches.subcommand_matches("broadcast") {
                 self.handle_broadcast_command(sub_matches).await?;
-            } else if matches.subcommand_matches("automatic").is_some(){
+            } else if matches.subcommand_matches("automatic").is_some() {
                 self.handle_automatic_command().await?;
             } else if matches.subcommand_matches("interactive").is_some() {
                 println!("{}", "Already in interactive mode.".yellow());

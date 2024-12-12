@@ -1,4 +1,4 @@
-use bitcoin::Network;
+use bitcoin::{Network, TestnetVersion};
 use bitvm::bridge::{client::cli::query_command::QueryCommand, constants::DestinationNetwork};
 use clap::{arg, command};
 use std::error::Error;
@@ -24,7 +24,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let (source_network, destination_network) =
         match matches.get_one::<String>("environment").unwrap().as_str() {
             "mainnet" => (Network::Bitcoin, DestinationNetwork::Ethereum),
-            "testnet" => (Network::Testnet, DestinationNetwork::EthereumSepolia),
+            "testnet" => (
+                Network::Testnet(TestnetVersion::V4),
+                DestinationNetwork::EthereumSepolia,
+            ),
             _ => {
                 eprintln!("Invalid environment. Use mainnet, testnet.");
                 std::process::exit(1);

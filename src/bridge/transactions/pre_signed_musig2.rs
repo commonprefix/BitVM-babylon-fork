@@ -53,10 +53,10 @@ pub fn push_nonce<T: PreSignedTransaction + PreSignedMusig2Transaction>(
         musig2_nonce_signatures.insert(input_index, HashMap::new());
     }
 
-    let nonce_signature = context.secp.sign_schnorr(
-        &get_nonce_message(&secret_nonce.public_nonce()),
-        &context.verifier_keypair,
-    );
+    let nonce_message = get_nonce_message(&secret_nonce.public_nonce());
+    let nonce_signature = context
+        .secp
+        .sign_schnorr(&nonce_message[..], &context.verifier_keypair);
 
     musig2_nonce_signatures
         .get_mut(&input_index)
@@ -67,11 +67,12 @@ pub fn push_nonce<T: PreSignedTransaction + PreSignedMusig2Transaction>(
 }
 
 pub fn get_nonce_message(nonce: &PubNonce) -> Message {
-    Message::from_hashed_data::<bitcoin::hashes::sha256::Hash>(nonce.to_bytes().as_slice())
+    let digest = bitcoin::hashes::sha256::Hash::hash(&nonce.to_bytes()).to_byte_array();
+    Message::from_digest(digest)
 }
 
 fn verify_schnorr_signature(sig: &Signature, msg: &Message, pubkey: &XOnlyPublicKey) -> bool {
-    match Secp256k1::new().verify_schnorr(sig, msg, pubkey) {
+    match Secp256k1::new().verify_schnorr(sig, &msg[..], pubkey) {
         Ok(()) => true,
         Err(e) => {
             eprintln!("verify_schnorr() failed with: {e}");
@@ -95,10 +96,7 @@ pub fn pre_sign_musig2_taproot_input<T: PreSignedTransaction + PreSignedMusig2Tr
 
     let prev_outs = &tx.prev_outs().clone();
     let script = &tx.prev_scripts()[input_index].clone();
-    let musig2_nonces = &tx.musig2_nonces()[&input_index]
-        .values()
-        .map(|public_nonce| public_nonce.clone())
-        .collect();
+    let musig2_nonces = &tx.musig2_nonces()[&input_index].values().cloned().collect();
 
     let partial_signature = generate_taproot_partial_signature(
         context,
@@ -135,10 +133,8 @@ pub fn finalize_musig2_taproot_input<T: PreSignedTransaction + PreSignedMusig2Tr
 
     let prev_outs = &tx.prev_outs().clone();
     let script = &tx.prev_scripts()[input_index].clone();
-    let musig2_nonces: &Vec<PubNonce> = &tx.musig2_nonces()[&input_index]
-        .values()
-        .map(|public_nonce| public_nonce.clone())
-        .collect();
+    let musig2_nonces: &Vec<PubNonce> =
+        &tx.musig2_nonces()[&input_index].values().cloned().collect();
     let musig2_signatures: Vec<MaybeScalar> = tx.musig2_signatures()[&input_index]
         .values()
         .map(|&partial_signature| PartialSignature::from(partial_signature))
